@@ -1,20 +1,54 @@
 import React, { useState, useEffect } from 'react';
 
 function TodoList() {
+    // usetate: 기억해야 할 값(상태)
     const [inputValue, setInputValue] = useState(''); 
-    //usetate: 기억해야 할 값(상태)
+    
 
+    // 전체, 완료, 미완료 필터
+    const [filter, setFilter] = useState<'all' | 'done' | 'undone'>('all');
+    // useState<...>(): TS의 제네릭 문법. 상태의 타입이 무엇인지 명시!
+    // 이 state는 'all'을 기본값을 가진 상태. 값은 'all', 'done', 'undone' 세가지 문자열 중 하나여야 한다.
+    // ('all'): 초기값
+    
     
     // 투두리스트에 완료 체크버튼 추가 (text + done 구조)
     type Todo = { 
         text: string;
         done: boolean;
+        createdAt: string;
     };
     
     // 투두리스트 배열
     const [todos, setTodos] = useState<Todo[]>([]);
     // setTodos: todos 상태를 업데이트하는 함수. 화면도 갱신
     // const [todos, setTodos] = useState<string[]>([]); // 완료 체크버튼 추가 전. 이걸 위처럼 객체 배열로 바꿔야 완료 여부 저장 가능.
+
+
+    // 초기값: localStorage에서 불러오기
+    useEffect(() => {
+    const storedTodos = localStorage.getItem('todos');
+        if (storedTodos) {
+            try {
+                setTodos(JSON.parse(storedTodos));
+            } catch (e) {
+                console.error("저장된 todos 파싱 오류", e);
+            }
+        }
+    }, []);
+    // localStorage.getItem('todos'): 문자열로 저장된 json 가져옴
+    // JSON.parse(storedTodos): 문자열을 js 객체/배열로 변환
+    // setTodos: 변환된 배열을 todos에 적용. 즉 '문자열'을 [{ text: '...', done: false }, ...] 로 바꾼 후 → todos에 넣는 과정
+    // catch (e): 예외를 잡아냄. 에러 로그를 보기 위해 출력하는 코드임.
+
+    
+    // 변경 시: localStorage에 저장 (자동 저장 기능 같은)
+    useEffect(() => {
+        localStorage.setItem('todos', JSON.stringify(todos));
+    }, [todos]);
+    // todos 배열이 변경될 때마다 실행되는 함수 등록. 할일 추가, 삭제, 완료체크 하면 이 함수 실행
+    // localStorage.setItem('todos',...): 브라우저의 로컬스토리지에 'todos'라는 이름으로 데이터 저장
+    // JSON.stringify(todos): todos는 js 객체 배열이므로, 문자열로 변환해서 저장. (로컬스토리지는 문자열만 저장 가능)
 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => { 
@@ -27,7 +61,7 @@ function TodoList() {
     // 투두추가
     const handleAdd = () => {
         if (inputValue.trim() === '') return;
-        setTodos([...todos, { text: inputValue, done: false }]); 
+        setTodos([...todos, { text: inputValue, done: false, createdAt: new Date().toLocaleString(), }]); 
         setInputValue(''); // 입력 필드 초기화
     };
     // 빈 문자열은 추가하지 않음: trim은 문자열 앞뒤 공백을 제거!
@@ -43,6 +77,7 @@ function TodoList() {
     };
     // 클릭한 항목의 인덱스가 매개변수로 전달
     // map: 배열의 각 요소를 변환해서 기존 todos배열을 새로운 배열로 만듦.
+    // map: 새로운 배열을 변환. jsx렌더링에 특화. foreach랑 비슷하다고 생각했는데 이건 반환을 아무것도 안 함.
     // 여기서는 todo.done을 반전시켜서 완료 상태를 토글함. i는 현재 인덱스임. i가 index와 같으면 해당 todo의 done 상태를 반전시킴. 그렇지 않으면 기존 todo를 그대로 반환.
     // 반환된 새 배열을 newTodos에 저장하고, setTodos로 상태 업데이트
 
@@ -65,20 +100,26 @@ function TodoList() {
 
 
 
-    // useEffect: 컴포넌트 렌더링 이후, side effect를 수행하기 위해 (AIP 호출, event 리스너 등록 등)
-    useEffect(() => {
+    // 투두 목록 필터링
+    const filteredTodos = todos.filter((todo) => {
+        if (filter === 'done') return todo.done;
+        if (filter === 'undone') return !todo.done;
+        return true; // filter === 'all'
+    });
 
-    })
 
 
 
-    ////////////////////////////////////////////////
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /*
-        1.일반적으로 맨 위 상단에 useState(상태 선언)를 먼저 작성.
-        2.useEffect(생명주기 및 side effect 처리)를 작성.
-        3.핸들러 함수(사용자 정의 함수. 이벤트 처리)를 작성.
+        1.일반적으로 맨 위 상단에 useState(상태 선언)를 먼저 작성. (컴포넌트의 핵심 상태)
+        2.useEffect(생명주기 및 side effect 처리)를 작성. (부수효과가 무엇인지)
+        3.핸들러 함수(사용자 정의 함수. 이벤트 처리)를 작성. (로직과 화면을 분리)
         4. return문 안에 JSX 작성.
     */
+    
     
     
     return (
@@ -94,12 +135,19 @@ function TodoList() {
                 <button onClick={handleAdd} className="todo-add-btn">추가</button>
             </div>
 
+            <div className="filter-btn-list">
+                <button onClick={() => setFilter('all')}>전체</button>
+                <button onClick={() => setFilter('done')}>완료</button>
+                <button onClick={() => setFilter('undone')}>미완료</button>
+            </div>
+
             <ul className="todo-list">
-                {todos.map((todo, idx) => ( // map: 새로운 배열을 변환. jsx렌더링에 특화. foreach랑 비슷하다고 생각했는데 이건 반환을 아무것도 안 함.
+                {filteredTodos.map((todo, idx) => (
                     <li key={idx} className="todo-item">
                         <span className={`todo-text ${todo.done ? 'done' : ''}`}>
                             {todo.text}
                         </span>
+                        <span className="todo-time">{todo.createdAt}</span>
                         <button className="todo-delete-btn" onClick={() => handleToggle(idx)}>완료</button>
                         <button className="todo-delete-btn" onClick={() => handleDelete(idx)}>삭제</button>
                     </li>
