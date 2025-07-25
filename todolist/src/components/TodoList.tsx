@@ -26,6 +26,36 @@ function TodoList() {
     // const [todos, setTodos] = useState<string[]>([]); // 완료 체크버튼 추가 전. 이걸 위처럼 객체 배열로 바꿔야 완료 여부 저장 가능.
 
 
+    // 투두리스트 수정중인 항목을 구분하는 상태값
+    const [editingIndex, setEditingIndex] = useState<number | null>(null); // 수정 중인 항목 인덱스
+    const [editValue, setEditValue] = useState<string>(''); // 수정할 텍스트 입력 값
+
+    // 수정버튼 클릭하면 상태 업데이트
+    const handleEdit = (index: number) => {
+        setEditingIndex(index);         // 몇 번째 항목을 수정 중인지 저장
+        setEditValue(todos[index].text); // 기존 값으로 입력 필드 채우기
+    };
+
+    // 수정완료 버튼 클릭 시 저장 기능
+    const handleEditSave = () => {
+        if (editingIndex === null) return;
+
+        const newTodos = [...todos];
+        newTodos[editingIndex] = {
+            ...newTodos[editingIndex],
+            text: editValue
+        };
+
+        setTodos(newTodos);
+        setEditingIndex(null);
+        setEditValue('');
+    };
+
+
+
+
+
+
     // 초기값: localStorage에서 불러오기
     useEffect(() => {
     const storedTodos = localStorage.getItem('todos');
@@ -110,13 +140,7 @@ function TodoList() {
 
 
     // 투두 리스트 수정
-    // const handleEdit = (index: number) => {
-    //     // todos.map으로 선택된 index의 리스트를 수정
-        
-    // }
-
-
-
+    
 
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -151,13 +175,20 @@ function TodoList() {
             <ul className="todo-list">
                 {filteredTodos.map((todo, idx) => (
                     <li key={idx} className="todo-item">
-                        <div className={`todo-text ${todo.done ? 'done' : ''}`}>
-                            {todo.isEditing ? (
-                                <input type="text"  />
+                        {/* <span className={`todo-text ${todo.done ? 'done' : ''}`}>{todo.text}</span> */}
+
+                        {editingIndex === idx ? (
+                            <>
+                                <input value={editValue} onChange={(e) => setEditValue(e.target.value)} />
+                                <button onClick={handleEditSave}>저장</button>
+                            </>
                             ) : (
-                                <span>{todo.text}</span>
-                            )}
-                        </div>
+                            <>
+                                <span className={`todo-text ${todo.done ? 'done' : ''}`}>{todo.text}</span>
+                                <button onClick={() => handleEdit(idx)}>수정</button>
+                            </>
+                        )}
+
                         <span className="todo-time">{todo.createdAt}</span>
                         <button className="todo-delete-btn" onClick={() => handleToggle(idx)}>완료</button>
                         <button className="todo-delete-btn" onClick={() => handleDelete(idx)}>삭제</button>
