@@ -17,6 +17,7 @@ function TodoList() {
         text: string;
         done: boolean;
         createdAt: string;
+        isEditing?: string; //수정 중 여부
     };
     
     // 투두리스트 배열
@@ -108,6 +109,12 @@ function TodoList() {
     });
 
 
+    // 투두 리스트 수정
+    // const handleEdit = (index: number) => {
+    //     // todos.map으로 선택된 index의 리스트를 수정
+        
+    // }
+
 
 
 
@@ -144,9 +151,13 @@ function TodoList() {
             <ul className="todo-list">
                 {filteredTodos.map((todo, idx) => (
                     <li key={idx} className="todo-item">
-                        <span className={`todo-text ${todo.done ? 'done' : ''}`}>
-                            {todo.text}
-                        </span>
+                        <div className={`todo-text ${todo.done ? 'done' : ''}`}>
+                            {todo.isEditing ? (
+                                <input type="text"  />
+                            ) : (
+                                <span>{todo.text}</span>
+                            )}
+                        </div>
                         <span className="todo-time">{todo.createdAt}</span>
                         <button className="todo-delete-btn" onClick={() => handleToggle(idx)}>완료</button>
                         <button className="todo-delete-btn" onClick={() => handleDelete(idx)}>삭제</button>
